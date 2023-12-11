@@ -54,7 +54,7 @@ def lastfm_data_retrieval(artist_name, lastfm_api_key):
         "format": "json"
     }
     response = requests.get(base_url, params=params)
-
+    # json file of additional info for each artist
     return response.json()
 
 # creates two tables: one table for artist + table one for song
@@ -98,7 +98,6 @@ def popularity_valence_visual(cursor):
    cursor.execute("SELECT popularity, valence FROM Song")
    features = cursor.fetchall()
    popularities, valences = zip(*features)
-
    plt.scatter(popularities, valences, color='red')
    plt.xlabel('Popularity')
    plt.ylabel('Valence')
