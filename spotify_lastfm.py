@@ -7,17 +7,18 @@ import requests
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
 import matplotlib.pyplot as plt
 
-# set up a connection to SQLite database
+# first: set up a connection to SQLite database
 # params: database_name
-# returns: cursor and connection
+# returns: cursor and connection to database
 def setup_database(database_name):
     base_path = os.path.dirname(os.path.realpath(__file__))
     database_connection = sqlite3.connect(os.path.join(base_path, database_name))
     database_cursor = database_connection.cursor()
+
     return database_cursor, database_connection
 
 # API #1: spotify web api (spotipy) fetches data from spotify playlist
-# this is the playlist (billboard hot 100 - it changes weekly):
+# this is the playlist (billboard hot 100, updates weekly):
 # https://open.spotify.com/playlist/6UeSakyzhiEt4NB3UAd6NQ?si=39410f233356484a
 # returns: track_data, valence_data, danceability_data, energy_data 
 def spotify_data_retrieval():
@@ -78,9 +79,33 @@ def insert_data_into_tables(track_data, valence, danceability, energy, cursor, c
         track_details = track['track']
         # song table: title, id, artist_id, popularity, valence, danceability, energy
         cursor.execute("INSERT OR IGNORE INTO Song (title, id, artist_id, popularity, valence, danceability, energy) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                       (track_details['name'], track_details['id'], artist_id, track_details['popularity'], valence[index], danceability[index], energy[index]))
+                    (track_details['name'], track_details['id'], artist_id, track_details['popularity'], valence[index], danceability[index], energy[index]))
         index += 1
+
     connection.commit()
+
+# visual representation of the data:
+
+# valence = vibes (0.0 - 1.0)
+# (0.0 = sad/bad vibes, 1.0 = happy/upbeat vibes)
+# popularity = how popular a song is (0 - 100)
+
+# plots the distribution of songs on the billboard hot 100
+# compares the popularity of the song to the valence (mood/vibes) of the song
+# question this plot addresses: do songs with a higher valence value tend to be more popular?
+def popularity_valence_visual(cursor):
+   # retrieve the popularity and valence of each song from song table
+   cursor.execute("SELECT popularity, valence FROM Song")
+   features = cursor.fetchall()
+   popularities, valences = zip(*features)
+
+   plt.scatter(popularities, valences, color='red')
+   plt.xlabel('Popularity')
+   plt.ylabel('Valence')
+   plt.title('Song Popularity vs Valence')
+   plt.grid(True)
+
+   plt.show()
 
 # plots the distribution of artists (only to 15 shown) on the billboard hot 100
 def plot_artist_distribution(cursor):
@@ -104,25 +129,7 @@ def plot_artist_distribution(cursor):
    plt.ylabel('Number of Songs')
    plt.xticks(rotation=90)
    plt.title('Top 15 Artists by Number of Songs on Billboard Hot 100')
-   plt.show()
 
-# valence = vibes (0.0 - 1.0)
-# (0.0 = sad/bad vibes, 1.0 = happy/upbeat vibes)
-# popularity = how popular a song is (0 - 100)
-
-# plots the distribution of songs on the billboard hot 100
-# compares the popularity of the song to the valence (mood/vibes) of the song
-# question this plot addresses: do songs with a higher valence value tend to be more popular?
-def plot_song_features(cursor):
-   cursor.execute("SELECT popularity, valence FROM Song")
-   features = cursor.fetchall()
-   popularities, valences = zip(*features)
-
-   plt.scatter(popularities, valences, color='red')
-   plt.xlabel('Popularity')
-   plt.ylabel('Valence')
-   plt.title('Song Popularity vs Valence')
-   plt.grid(True)
    plt.show()
 
 def main():
@@ -144,7 +151,7 @@ def main():
     plot_artist_distribution(cursor)
 
     # plot data for song popularity vs valence
-    plot_song_features(cursor)
+    popularity_valence_visual(cursor)
 
     # close the connection to database
     connection.close()
