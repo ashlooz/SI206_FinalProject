@@ -7,7 +7,7 @@ import requests
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
 import matplotlib.pyplot as plt
 
-# first: set up a connection to SQLite database
+# set up a connection to SQLite database
 # params: database_name
 # returns: cursor and connection
 def setup_database(database_name):
@@ -17,7 +17,7 @@ def setup_database(database_name):
     return database_cursor, database_connection
 
 # API #1: spotify web api (spotipy) fetches data from spotify playlist
-# this is the playlist (billboard hot 100, updates weekly):
+# this is the playlist (billboard hot 100 - it changes weekly):
 # https://open.spotify.com/playlist/6UeSakyzhiEt4NB3UAd6NQ?si=39410f233356484a
 # returns: track_data, valence_data, danceability_data, energy_data 
 def spotify_data_retrieval():
