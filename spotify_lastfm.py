@@ -54,14 +54,14 @@ def lastfm_data_retrieval(artist_name, lastfm_api_key):
         "format": "json"
     }
     response = requests.get(base_url, params=params)
-    # json file of additional info for each artist
+
     return response.json()
 
 # creates two tables: one table for artist + table one for song
 # shared key between tables: artist_id
 # need to fix dulicate strings **!
 def create_artist_and_song_tables(cursor, connection):
-    cursor.execute("CREATE TABLE IF NOT EXISTS Artist (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, lastfm_info TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS Artist (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, lastfm_info TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS Song (title TEXT PRIMARY KEY, id TEXT, artist_id INTEGER, popularity INTEGER, valence FLOAT, danceability FLOAT, energy FLOAT)")
     connection.commit()
 
@@ -98,6 +98,7 @@ def popularity_valence_visual(cursor):
    cursor.execute("SELECT popularity, valence FROM Song")
    features = cursor.fetchall()
    popularities, valences = zip(*features)
+
    plt.scatter(popularities, valences, color='red')
    plt.xlabel('Popularity')
    plt.ylabel('Valence')
@@ -130,3 +131,30 @@ def plot_artist_distribution(cursor):
    plt.title('Top 15 Artists by Number of Songs on Billboard Hot 100')
 
    plt.show()
+
+def main():
+    # lastfm api key
+    lastfm_api_key = "5d2702b8f89733c46c584f393263c35c"
+    # set up database
+    cursor, connection = setup_database("billboard_hot_100.db")
+    
+    # make tables
+    create_artist_and_song_tables(cursor, connection)
+
+    # get data from spotify and lastfm
+    track_data, valence, danceability, energy = spotify_data_retrieval()
+    
+    # insert data into tables
+    insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
+    
+    # plot data for top 15 artists with most songs
+    plot_artist_distribution(cursor)
+
+    # plot data for song popularity vs valence
+    popularity_valence_visual(cursor)
+
+    # close the connection to database
+    connection.close()
+
+if __name__ == "__main__":
+    main()
