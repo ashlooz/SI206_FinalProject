@@ -23,8 +23,8 @@ def setup_database(database_name):
 # returns: track_data, valence_data, danceability_data, energy_data 
 def spotify_data_retrieval():
     # spotify api keys
-    spotify_id = "32c7e30e325d4b57ba74e2bf47f067b5"
-    spotify_secret = "0ae2ba60ce974d8c95a6045fd1967970"
+    spotify_id = "abe3508a9e804f84ba4fab9be118e47d"
+    spotify_secret = "0955374cdbae41caa31ca4b1d7547bb9"
     credential_manager = SCC(client_id=spotify_id, client_secret=spotify_secret)
     spotify_session = spotipy.Spotify(client_credentials_manager=credential_manager)
     billboard_playlist_id = "6UeSakyzhiEt4NB3UAd6NQ"
@@ -83,78 +83,3 @@ def insert_data_into_tables(track_data, valence, danceability, energy, cursor, c
         index += 1
 
     connection.commit()
-
-# visual representation of the data:
-
-# valence = vibes (0.0 - 1.0)
-# (0.0 = sad/bad vibes, 1.0 = happy/upbeat vibes)
-# popularity = how popular a song is (0 - 100)
-
-# plots the distribution of songs on the billboard hot 100
-# compares the popularity of the song to the valence (mood/vibes) of the song
-# question this plot addresses: do songs with a higher valence value tend to be more popular?
-def popularity_valence_visual(cursor):
-   # retrieve the popularity and valence of each song from song table
-   cursor.execute("SELECT popularity, valence FROM Song")
-   features = cursor.fetchall()
-   popularities, valences = zip(*features)
-
-   plt.scatter(popularities, valences, color='red')
-   plt.xlabel('Popularity')
-   plt.ylabel('Valence')
-   plt.title('Song Popularity vs Valence')
-   plt.grid(True)
-
-   plt.show()
-
-# plots the distribution of artists (only to 15 shown) on the billboard hot 100
-def plot_artist_distribution(cursor):
-   # sets a limit on the query to the top 15 artists with the most songs on hot 100 playlist
-   cursor.execute("""
-       SELECT Artist.name, COUNT(Song.id)
-       FROM Song
-       JOIN Artist ON Song.artist_id = Artist.id
-       GROUP BY Artist.id
-       ORDER BY COUNT(Song.id) DESC
-       LIMIT 15
-   """)
-   artist_data = cursor.fetchall()
-
-   # unpacking the fetched data
-   artists, song_counts = zip(*artist_data)
-
-   # plotting the data on chart (bar chart with to 15 artists)
-   plt.bar(artists, song_counts, color='green')
-   plt.xlabel('Artists')
-   plt.ylabel('Number of Songs')
-   plt.xticks(rotation=90)
-   plt.title('Top 15 Artists by Number of Songs on Billboard Hot 100')
-
-   plt.show()
-
-def main():
-    # lastfm api key
-    lastfm_api_key = "5d2702b8f89733c46c584f393263c35c"
-    # set up database
-    cursor, connection = setup_database("billboard_hot_100.db")
-    
-    # make tables
-    create_artist_and_song_tables(cursor, connection)
-
-    # get data from spotify and lastfm
-    track_data, valence, danceability, energy = spotify_data_retrieval()
-    
-    # insert data into tables
-    insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
-    
-    # plot data for top 15 artists with most songs
-    plot_artist_distribution(cursor)
-
-    # plot data for song popularity vs valence
-    popularity_valence_visual(cursor)
-
-    # close the connection to database
-    connection.close()
-
-if __name__ == "__main__":
-    main()
