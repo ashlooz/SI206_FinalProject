@@ -22,10 +22,10 @@ def main():
     # insert data into tables
     insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
     
-    # plot data for top 15 artists with most songs
+    # plot #1: data for top 15 artists with most songs
     plot_artist_distribution(cursor)
 
-    # plot data for song popularity vs valence
+    # plot #2: data for song popularity vs valence
     popularity_valence_visual(cursor)
 
     # close the connection to database
