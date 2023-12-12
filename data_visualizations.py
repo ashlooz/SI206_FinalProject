@@ -27,7 +27,8 @@ def popularity_valence_visual(cursor):
 
 # plots the distribution of artists (only to 15 shown) on the billboard hot 100
 def plot_artist_distribution(cursor):
-   # sets a limit on the query to the top 15 artists with the most songs on hot 100 playlist
+    # sets a limit on the query to the top 15 artists with the most songs on hot 100 playlist
+    # join is used to merge song table rows with artist table rows (made on the condition that 'artist_id' in song table matches 'id' in artist table)
    cursor.execute("""
        SELECT Artist.name, COUNT(Song.id)
        FROM Song
@@ -50,7 +51,7 @@ def plot_artist_distribution(cursor):
    
    plt.show()
 
-   # add 2 extra visualizations (+30 pts)***
+# add 2 extra visualizations (+30 pts)***
 
 # calculations: 
 
