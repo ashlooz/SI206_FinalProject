@@ -1,4 +1,3 @@
-
 import sqlite3
 import matplotlib.pyplot as plt
 
@@ -41,11 +40,28 @@ def plot_artist_distribution(cursor):
    # unpacking the fetched data
    artists, song_counts = zip(*artist_data)
 
-   # plotting the data on chart (bar chart with to 15 artists)
+   # plotting the data on chart (bar chart with limit set to 15 artists being displayed)
    plt.bar(artists, song_counts, color='salmon')
    plt.xlabel('Artists')
    plt.ylabel('Number of Songs')
    plt.xticks(rotation=90)
    plt.title('Top 15 Artists by Number of Songs on Billboard Hot 100')
-
+   
    plt.show()
+
+   # add 2 extra visualizations (+30 pts)***
+
+def main():
+    # connects to billboard_hot_100 database
+    connection = sqlite3.connect("billboard_hot_100.db")
+    cursor = connection.cursor()
+
+    # generate visualizations
+    plot_artist_distribution(cursor)
+    popularity_valence_visual(cursor)
+
+    # close db connection
+    connection.close()
+
+if __name__ == "__main__":
+    main()
