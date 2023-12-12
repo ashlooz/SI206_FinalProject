@@ -21,6 +21,8 @@ def main():
     
     # insert data into tables
     insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
+
+    # add calculations function call here when done
     
     # plot #1: data for top 15 artists with most songs
     plot_artist_distribution(cursor)
