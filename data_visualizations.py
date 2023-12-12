@@ -1,5 +1,6 @@
 import sqlite3
 import matplotlib.pyplot as plt
+import statistics
 
 # visual representation of the data:
 
@@ -51,6 +52,34 @@ def plot_artist_distribution(cursor):
 
    # add 2 extra visualizations (+30 pts)***
 
+# calculations: 
+
+# calculates the average valence of all songs in the playlist
+def get_average_valence(cursor):
+    cursor.execute("SELECT valence FROM Song")
+    valence_list = cursor.fetchall()
+
+    if not valence_list:
+        # returns a 0 if the list is empty
+        return 0
+
+    total_valence = sum(float(valence[0]) for valence in valence_list)
+    average_valence = total_valence / len(valence_list)
+    return average_valence
+
+# calculates the standard deviation of valences of all songs in the playlist
+def get_valence_std_dev(cursor):
+    cursor.execute("SELECT valence FROM Song")
+    valence_list = cursor.fetchall()
+
+    if len(valence_list) < 2:
+        # returns a 0 if the list has less than 2 elements inside
+        return 0
+
+    valences = [float(valence[0]) for valence in valence_list]
+    valence_std_dev = statistics.stdev(valences)
+    return valence_std_dev
+
 def main():
     # connects to billboard_hot_100 database
     connection = sqlite3.connect("billboard_hot_100.db")
@@ -59,6 +88,15 @@ def main():
     # generate visualizations
     plot_artist_distribution(cursor)
     popularity_valence_visual(cursor)
+
+    # make calculations and store values accordingly
+    valence_standard_deviation = get_valence_std_dev(cursor)
+    average_valence = get_average_valence(cursor)
+
+    # write calculations to calculations_results.txt file
+    with open('calculations_results.txt', 'w') as file:
+        file.write(f"The valence standard deviation for the songs in the Billboard Top 100 is {valence_standard_deviation}\n")
+        file.write(f"The average valence of songs in the Billboard Top 100 is {average_valence}\n")
 
     # close db connection
     connection.close()
