@@ -1,11 +1,9 @@
 import json
 import sqlite3
 import os
-import numpy as np
-import spotipy
 import requests
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
-import matplotlib.pyplot as plt
+import spotipy
 
 # stary by setting up a connection to SQLite database
 # params: database_name
@@ -21,10 +19,7 @@ def setup_database(database_name):
 # this is the playlist (billboard hot 100, updates weekly):
 # https://open.spotify.com/playlist/6UeSakyzhiEt4NB3UAd6NQ?si=39410f233356484a
 # returns: track_data, valence_data, danceability_data, energy_data 
-def spotify_data_retrieval():
-    # spotify api keys
-    spotify_id = "f5cd3aaae8dd450f83cd7c59aabf332e"
-    spotify_secret = "efeb4e0b986c485198b441aa58cd43af"
+def spotify_data_retrieval(spotify_id, spotify_secret):
     credential_manager = SCC(client_id=spotify_id, client_secret=spotify_secret)
     spotify_session = spotipy.Spotify(client_credentials_manager=credential_manager)
     billboard_playlist_id = "6UeSakyzhiEt4NB3UAd6NQ"
@@ -68,18 +63,56 @@ def create_artist_and_song_tables(cursor, connection):
 # puts artist data & song data into sqlite tables
 # data comprised of information from both spotify and lastfm
 def insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key):
-    index = 0
-    for track in track_data['items']:
-        artist_name = track['track']['artists'][0]['name']
+    # retrieve the number of rows already present in the Song table in sqlite
+    cursor.execute("SELECT COUNT(*) FROM Song")
+    count = cursor.fetchone()[0] # this will find the first (& only) item from the result, telling us how many songs are in the database
+
+    # figures out where the start and end indices must be for this run
+    start_index = count # start at the current song count (pick up from where we last left off if applicable)
+    end_index = start_index + 25 # stop adding at end_index for this run (i.e. once a max of 25 new items are added)
+
+    for i in range(start_index, min(end_index, len(track_data['items']))):
+        # track and artist information
+        track = track_data['items'][i]['track']
+        artist_name = track['artists'][0]['name']
+        # additional lastfm information
         lastfm_info = lastfm_data_retrieval(artist_name, lastfm_api_key)
-        # artist table: name, id, lastfm_info
+
+        # inserts the artists info into Artist table (will ignore duplicate data)
         cursor.execute("INSERT OR IGNORE INTO Artist (name, lastfm_info) VALUES (?, ?)", (artist_name, json.dumps(lastfm_info)))
+        
+        # gets the artist id from the Artist table
         cursor.execute("SELECT id FROM Artist WHERE name = ?", (artist_name,))
         artist_id = cursor.fetchone()[0]
-        track_details = track['track']
-        # song table: title, id, artist_id, popularity, valence, danceability, energy
-        cursor.execute("INSERT OR IGNORE INTO Song (title, id, artist_id, popularity, valence, danceability, energy) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                    (track_details['name'], track_details['id'], artist_id, track_details['popularity'], valence[index], danceability[index], energy[index]))
-        index += 1
 
+        # inserts the song info into the Song table (also ignores duplicates)
+        cursor.execute("INSERT OR IGNORE INTO Song (title, id, artist_id, popularity, valence, danceability, energy) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                       (track['name'], track['id'], artist_id, track['popularity'], valence[i], danceability[i], energy[i]))
+
+    # commit changes
     connection.commit()
+
+# write out json file for top artist***
+
+def main():
+    # keys
+    spotify_id = "3681517a0b5b46ff9b8f880c64c32fce"
+    spotify_secret = "a0df66c9cfba4f41bf393cab9060f7b4"
+    lastfm_api_key = "975e6d8efe97116b6f9635ba43e16e6e"
+
+    # set up database connection
+    cursor, connection = setup_database("billboard_hot_100.db")
+
+    # make the artist table and song table
+    create_artist_and_song_tables(cursor, connection)
+
+    # get data from spotify api
+    track_data, valence, danceability, energy = spotify_data_retrieval(spotify_id, spotify_secret)
+
+    # insert data into tables
+    insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
+
+    connection.close()
+
+if __name__ == "__main__":
+    main()
