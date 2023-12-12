@@ -9,7 +9,8 @@ from visualizations import plot_artist_distribution, popularity_valence_visual
 
 def main():
     # lastfm api key
-    lastfm_api_key = "5d2702b8f89733c46c584f393263c35c"
+    lastfm_api_key = "975e6d8efe97116b6f9635ba43e16e6e"
+    
     # set up database
     cursor, connection = setup_database("billboard_hot_100.db")
     
