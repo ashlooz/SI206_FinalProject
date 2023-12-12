@@ -1,4 +1,4 @@
-from spotify_lastfm_db import (
+from spotify_lastfm_database import (
     setup_database,
     spotify_data_retrieval,
     lastfm_data_retrieval,
@@ -21,13 +21,11 @@ def main():
     
     # insert data into tables
     insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
-
-    # add calculations function call here when done
     
-    # plot #1: data for top 15 artists with most songs
+    # plot data for top 15 artists with most songs
     plot_artist_distribution(cursor)
 
-    # plot #2: data for song popularity vs valence
+    # plot data for song popularity vs valence
     popularity_valence_visual(cursor)
 
     # close the connection to database
