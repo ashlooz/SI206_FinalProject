@@ -7,7 +7,7 @@ import requests
 from spotipy.oauth2 import SpotifyClientCredentials as SCC
 import matplotlib.pyplot as plt
 
-# first: set up a connection to SQLite database
+# stary by setting up a connection to SQLite database
 # params: database_name
 # returns: cursor and connection to database
 def setup_database(database_name):
