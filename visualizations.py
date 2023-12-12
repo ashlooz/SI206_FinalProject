@@ -1,26 +1,35 @@
-import sqlite3
-import matplotlib.pyplot as plt
+from spotify_lastfm_database import (
+    setup_database,
+    spotify_data_retrieval,
+    lastfm_data_retrieval,
+    create_artist_and_song_tables,
+    insert_data_into_tables)
 
-# visual representation of the data:
+from visualizations import plot_artist_distribution, popularity_valence_visual
 
-# valence = vibes (0.0 - 1.0)
-# (0.0 = sad/bad vibes, 1.0 = happy/upbeat vibes)
-# popularity = how popular a song is (0 - 100)
+def main():
+    # lastfm api key
+    lastfm_api_key = "5d2702b8f89733c46c584f393263c35c"
+    # set up database
+    cursor, connection = setup_database("billboard_hot_100.db")
+    
+    # make tables
+    create_artist_and_song_tables(cursor, connection)
 
-# plots the distribution of songs on the billboard hot 100
-# compares the popularity of the song to the valence (mood/vibes) of the song
-# question this plot addresses: do songs with a higher valence value tend to be more popular?
-def popularity_valence_visual(cursor):
-   # retrieve the popularity and valence of each song from song table
-   cursor.execute("SELECT popularity, valence FROM Song")
-   features = cursor.fetchall()
-   popularities, valences = zip(*features)
-   # popularity x, valence y
-   plt.title('Song Popularity vs Valence')
-   plt.scatter(popularities, valences, color='red')
-   plt.xlabel('Popularity')
-   plt.ylabel('Valence')
-   plt.grid(True)
+    # get data from spotify and lastfm
+    track_data, valence, danceability, energy = spotify_data_retrieval()
+    
+    # insert data into tables
+    insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key)
+    
+    # plot data for top 15 artists with most songs
+    plot_artist_distribution(cursor)
 
-   plt.show()
+    # plot data for song popularity vs valence
+    popularity_valence_visual(cursor)
 
+    # close the connection to database
+    connection.close()
+
+if __name__ == "__main__":
+    main()
