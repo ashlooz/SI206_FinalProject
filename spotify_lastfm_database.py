@@ -23,8 +23,8 @@ def setup_database(database_name):
 # returns: track_data, valence_data, danceability_data, energy_data 
 def spotify_data_retrieval():
     # spotify api keys
-    spotify_id = "abe3508a9e804f84ba4fab9be118e47d"
-    spotify_secret = "0955374cdbae41caa31ca4b1d7547bb9"
+    spotify_id = "f5cd3aaae8dd450f83cd7c59aabf332e"
+    spotify_secret = "efeb4e0b986c485198b441aa58cd43af"
     credential_manager = SCC(client_id=spotify_id, client_secret=spotify_secret)
     spotify_session = spotipy.Spotify(client_credentials_manager=credential_manager)
     billboard_playlist_id = "6UeSakyzhiEt4NB3UAd6NQ"
