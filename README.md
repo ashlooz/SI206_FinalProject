@@ -1,3 +1,3 @@
-# SI206_FinalProject
+# [SI206: FA2023] FinalProject
 Ashley Bouse &amp; Terry Qi
-# SI 206 FA 2023
+
