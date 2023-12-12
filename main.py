@@ -1,3 +1,12 @@
+from spotify_lastfm_db import (
+    setup_database,
+    spotify_data_retrieval,
+    lastfm_data_retrieval,
+    create_artist_and_song_tables,
+    insert_data_into_tables)
+
+from visualizations import plot_artist_distribution, popularity_valence_visual
+
 def main():
     # lastfm api key
     lastfm_api_key = "5d2702b8f89733c46c584f393263c35c"
@@ -24,4 +33,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
