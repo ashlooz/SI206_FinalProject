@@ -51,7 +51,7 @@ def plot_artist_distribution(cursor):
    
    plt.show()
 
-# add 2 extra visualizations (+30 pts)***
+# add 2 extra visualizations (+30 pts)
 
 # calculations: 
 
