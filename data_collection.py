@@ -38,66 +38,87 @@ def spotify_data_retrieval(spotify_id, spotify_secret):
 
     return track_data, valence_data, danceability_data, energy_data
 
-# API #2: lastfm api - uses artist name + api key to get more info about each artist
-# returns a json of additional info about the artist
-def lastfm_data_retrieval(artist_name, lastfm_api_key):
+# creates two tables: one table for artist + table one for song
+# shared key between tables: artist_id
+def create_artist_and_song_tables(cursor, connection):
+    # artist table - name text must be unique = no duplicate string data
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Artist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        name TEXT UNIQUE)
+    """)
+    # song table with corresponding id, popularity, artist_id, valence, daceability, energy, and play count
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Song (
+        title TEXT PRIMARY KEY, 
+        id TEXT,
+        artist_id INTEGER, 
+        popularity INTEGER, 
+        valence FLOAT, 
+        danceability FLOAT, 
+        energy FLOAT,
+        play_count INTEGER)
+    """)
+    connection.commit()
+
+# gets the number of times song has been played for the specified track (data from lastfm api)
+def get_lastfm_play_count(track_title, artist_name, lastfm_api_key):
     base_url = "http://ws.audioscrobbler.com/2.0/"
+    # parameters for api request
     params = {
-        "method": "artist.getinfo",
+        "method": "track.getInfo",
+        "track": track_title,
         "artist": artist_name,
         "api_key": lastfm_api_key,
         "format": "json"
     }
+    # first makes api request
     response = requests.get(base_url, params=params)
-
-    return response.json()
-
-# creates two tables: one table for artist + table one for song
-# shared key between tables: artist_id
-# need to fix dulicate strings **!
-def create_artist_and_song_tables(cursor, connection):
-    cursor.execute("CREATE TABLE IF NOT EXISTS Artist (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, lastfm_info TEXT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS Song (title TEXT PRIMARY KEY, id TEXT, artist_id INTEGER, popularity INTEGER, valence FLOAT, danceability FLOAT, energy FLOAT)")
-    connection.commit()
+    # then parses the json response
+    track_info = response.json()
+    
+    # gets play count --> or play count will default to 0 if not applicable
+    play_count = track_info.get('track', {}).get('playcount', 0)
+    return int(play_count)
 
 # puts artist data & song data into sqlite tables
 # data comprised of information from both spotify and lastfm
 def insert_data_into_tables(track_data, valence, danceability, energy, cursor, connection, lastfm_api_key):
-    # retrieve the number of rows already present in the Song table in sqlite
     cursor.execute("SELECT COUNT(*) FROM Song")
-    count = cursor.fetchone()[0] # this will find the first (& only) item from the result, telling us how many songs are in the database
+    # figures out the current # of songs in the song table
+    count = cursor.fetchone()[0]
 
-    # figures out where the start and end indices must be for this run
-    start_index = count # start at the current song count (pick up from where we last left off if applicable)
-    end_index = start_index + 25 # stop adding at end_index for this run (i.e. once a max of 25 new items are added)
+    # starting index is where count left off
+    start_index = count
+    end_index = start_index + 25 # index to end at will be 25 max from the starting index
 
+    # iteration for each unique track to add its corresponding data to the table
     for i in range(start_index, min(end_index, len(track_data['items']))):
-        # track and artist information
         track = track_data['items'][i]['track']
         artist_name = track['artists'][0]['name']
-        # additional lastfm information
-        lastfm_info = lastfm_data_retrieval(artist_name, lastfm_api_key)
 
-        # inserts the artists info into Artist table (will ignore duplicate data)
-        cursor.execute("INSERT OR IGNORE INTO Artist (name, lastfm_info) VALUES (?, ?)", (artist_name, json.dumps(lastfm_info)))
-        
-        # gets the artist id from the Artist table
+        # gets the play count from last fm api
+        play_count = get_lastfm_play_count(track['name'], artist_name, lastfm_api_key)
+
+        # puts the artist name into the artist table
+        # also ignores duplicate data (prevents duplicate string data)
+        cursor.execute("INSERT OR IGNORE INTO Artist (name) VALUES (?)", (artist_name,))
+        # get artist id
         cursor.execute("SELECT id FROM Artist WHERE name = ?", (artist_name,))
         artist_id = cursor.fetchone()[0]
+        # adds the track info to song table
+        cursor.execute("""
+        INSERT OR IGNORE INTO Song 
+        (title, id, artist_id, popularity, valence, danceability, energy, play_count) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", 
+        (track['name'], track['id'], artist_id, track['popularity'], valence[i], danceability[i], energy[i], play_count))
 
-        # inserts the song info into the Song table (also ignores duplicates)
-        cursor.execute("INSERT OR IGNORE INTO Song (title, id, artist_id, popularity, valence, danceability, energy) VALUES (?, ?, ?, ?, ?, ?, ?)", 
-                       (track['name'], track['id'], artist_id, track['popularity'], valence[i], danceability[i], energy[i]))
-
-    # commit changes
     connection.commit()
-
-# write out json file for top artist***
 
 def main():
     # keys
-    spotify_id = "3681517a0b5b46ff9b8f880c64c32fce"
-    spotify_secret = "a0df66c9cfba4f41bf393cab9060f7b4"
+    spotify_id = "f085180bc7734d74ad93260bc79e49a4"
+    spotify_secret = "641e6fab2a7b4b608e7053e80c376b8d"
     lastfm_api_key = "975e6d8efe97116b6f9635ba43e16e6e"
 
     # set up database connection
