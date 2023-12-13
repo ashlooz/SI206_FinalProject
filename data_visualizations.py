@@ -17,7 +17,7 @@ def popularity_valence_visual(cursor):
    features = cursor.fetchall()
    popularities, valences = zip(*features)
 
-   plt.scatter(popularities, valences, color='salmon')
+   plt.scatter(popularities, valences, color='indigo')
    plt.xlabel('Popularity')
    plt.ylabel('Valence')
    plt.title('Song Popularity vs Valence')
@@ -43,7 +43,7 @@ def plot_artist_distribution(cursor):
    artists, song_counts = zip(*artist_data)
 
    # plotting the data on chart (bar chart with limit set to 15 artists being displayed)
-   plt.bar(artists, song_counts, color='salmon')
+   plt.bar(artists, song_counts, color='orchid')
    plt.xlabel('Artists')
    plt.ylabel('Number of Songs')
    plt.xticks(rotation=90)
@@ -54,13 +54,13 @@ def plot_artist_distribution(cursor):
 # energy vs. danceability plot
 # question to answer from graph: is a higher energy song more likely to be more danceable?
 def energy_danceability_visual(cursor):
-    # Retrieve energy and danceability of each song
+    # gets the energy and danceability values of each song
     cursor.execute("SELECT energy, danceability FROM Song")
     features = cursor.fetchall()
     energies, danceabilities = zip(*features)
 
-    # Create a scatter plot for energy vs danceability
-    plt.scatter(energies, danceabilities, color='lightpink')
+    # makes scatter plot for energy vs danceability
+    plt.scatter(energies, danceabilities, color='steelblue')
     plt.xlabel('Energy')
     plt.ylabel('Danceability')
     plt.title('Energy vs Danceability of Songs')
@@ -68,8 +68,35 @@ def energy_danceability_visual(cursor):
 
     plt.show()
 
+# energy distribution of billboard top 100 songs
+# does the billboard top 100 have more low, medium, or high energy songs?
+def energy_distribution_visual(cursor):
+    # get the energy data
+    cursor.execute("SELECT energy FROM Song")
+    energy_data = cursor.fetchall()
+    energies = [float(energy[0]) for energy in energy_data]
 
-# calculations: 
+    # define the 3 energy categories (low, med, high)
+    energy_categories = ["Low", "Medium", "High"]
+
+    # below 0.3 is "low energy"
+    # between 0.3 and 0.7 is "medium energy"
+    # anything higher than 0.7 is "high energy"
+    # count the number of songs in each energy category
+    energy_counts = [sum(1 for energy in energies if energy < 0.3),  # low
+                     sum(1 for energy in energies if 0.3 <= energy < 0.7),  # medium
+                     sum(1 for energy in energies if energy >= 0.7)]  # high
+
+    # makes the bar chart, diff colors for each category
+    plt.bar(energy_categories, energy_counts, color=['lightcoral', 'lightblue', 'lightgreen'])
+    plt.xlabel('Energy Category')
+    plt.ylabel('Number of Songs')
+    plt.title('Energy Distribution of Songs on Billboard Hot 100')
+    plt.grid(axis='y')
+
+    plt.show()
+
+# calculations from the data: 
 
 # calculates the average valence of all songs in the playlist
 def get_average_valence(cursor):
@@ -117,10 +144,9 @@ def main():
 
     # generate visualizations
     plot_artist_distribution(cursor)
-
     popularity_valence_visual(cursor)
-
     energy_danceability_visual(cursor)
+    energy_distribution_visual(cursor)
     
     # make calculations and store values accordingly
     valence_standard_deviation = get_valence_std_dev(cursor)
