@@ -103,9 +103,11 @@ def insert_data_into_tables(track_data, valence, danceability, energy, cursor, c
         # puts the artist name into the artist table
         # also ignores duplicate data (prevents duplicate string data)
         cursor.execute("INSERT OR IGNORE INTO Artist (name) VALUES (?)", (artist_name,))
+
         # get artist id
         cursor.execute("SELECT id FROM Artist WHERE name = ?", (artist_name,))
         artist_id = cursor.fetchone()[0]
+        
         # adds the track info to song table
         cursor.execute("""
         INSERT OR IGNORE INTO Song 
