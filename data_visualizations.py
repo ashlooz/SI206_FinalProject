@@ -51,7 +51,23 @@ def plot_artist_distribution(cursor):
    
    plt.show()
 
-# add 2 extra visualizations (+30 pts)
+# energy vs. danceability plot
+# question to answer from graph: is a higher energy song more likely to be more danceable?
+def energy_danceability_visual(cursor):
+    # Retrieve energy and danceability of each song
+    cursor.execute("SELECT energy, danceability FROM Song")
+    features = cursor.fetchall()
+    energies, danceabilities = zip(*features)
+
+    # Create a scatter plot for energy vs danceability
+    plt.scatter(energies, danceabilities, color='lightpink')
+    plt.xlabel('Energy')
+    plt.ylabel('Danceability')
+    plt.title('Energy vs Danceability of Songs')
+    plt.grid(True)
+
+    plt.show()
+
 
 # calculations: 
 
@@ -81,6 +97,19 @@ def get_valence_std_dev(cursor):
     valence_std_dev = statistics.stdev(valences)
     return valence_std_dev
 
+# calculates the average play count of all songs in the database (aka the billboard 100 playlist)
+def get_average_play_count(cursor):
+    cursor.execute("SELECT play_count FROM Song")
+    play_count_list = cursor.fetchall()
+
+    if not play_count_list:
+        # Returns 0 if the list is empty
+        return 0
+
+    total_play_count = sum(int(play_count[0]) for play_count in play_count_list)
+    average_play_count = total_play_count / len(play_count_list)
+    return average_play_count
+
 def main():
     # connects to billboard_hot_100 database
     connection = sqlite3.connect("billboard_hot_100.db")
@@ -88,16 +117,21 @@ def main():
 
     # generate visualizations
     plot_artist_distribution(cursor)
+
     popularity_valence_visual(cursor)
 
+    energy_danceability_visual(cursor)
+    
     # make calculations and store values accordingly
     valence_standard_deviation = get_valence_std_dev(cursor)
     average_valence = get_average_valence(cursor)
-
+    average_play_count = get_average_play_count(cursor)
+    
     # write calculations to calculations_results.txt file
     with open('calculations_results.txt', 'w') as file:
         file.write(f"The valence standard deviation for the songs in the Billboard Top 100 is {valence_standard_deviation}\n")
         file.write(f"The average valence of songs in the Billboard Top 100 is {average_valence}\n")
+        file.write(f"The average play count of songs in the Billboard Top 100 is {average_play_count}\n")
 
     # close db connection
     connection.close()
