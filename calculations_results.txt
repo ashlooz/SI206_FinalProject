@@ -1,2 +1,0 @@
-The valence standard deviation for the songs in the Billboard Top 100 is 0.24986038492637355
-The average valence of songs in the Billboard Top 100 is 0.4917419999999999
