@@ -1,7 +1,13 @@
 import sqlite3
 import matplotlib.pyplot as plt
 import statistics
+import pandas as pd
+import plotly.express as px
+import numpy as np
+import random
+import matplotlib.patches as mpatches
 
+# all of the functions in data_visualizations.py select data from the database and do something with it (i.e. visualization or calculations)
 # visual representation of the data:
 
 # valence = vibes (0.0 - 1.0)
@@ -130,18 +136,100 @@ def get_average_play_count(cursor):
     play_count_list = cursor.fetchall()
 
     if not play_count_list:
-        # Returns 0 if the list is empty
+        # returns 0 if the list is empty
         return 0
 
     total_play_count = sum(int(play_count[0]) for play_count in play_count_list)
     average_play_count = total_play_count / len(play_count_list)
     return average_play_count
 
+
+def valence_to_color(valence):
+    """Converts a valence value to a pastel RGBA color string."""
+    # base color: 0.0 (sad/blue) to 1.0 (happy/red)
+    r = valence
+    g = 0.5 * (1 - valence)  # adds in a bit of green to soften the color (less harsh color tone)
+    b = 1 - valence
+
+    # mix with white for a "pastel" effect
+    mix_with_white = 0.7
+    r, g, b = r + (1 - r) * mix_with_white, g + (1 - g) * mix_with_white, b + (1 - b) * mix_with_white
+
+    # formatted as an rgb string (becomes the background color)
+    return f'rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 1)'
+
+def plot_mood_map_interactive(cursor):
+    cursor.execute("SELECT valence, energy, title, artist_id FROM Song")
+    songs = cursor.fetchall()
+
+    # makes a DataFrame from the data
+    df = pd.DataFrame(songs, columns=['Valence', 'Energy', 'Title', 'Artist'])
+
+    # finds average valence
+    average_valence = df['Valence'].mean()
+
+    # makes the background color based on average valence
+    background_color = valence_to_color(average_valence)
+
+    # uses plotly to create scatter plot
+    fig = px.scatter(df, x='Valence', y='Energy', color='Energy',
+                     hover_data=['Title', 'Artist'], title='Music Mood Map',
+                     labels={'Valence': 'Mood', 'Energy': 'Energy Level'})
+
+    # customizing the layout with the dynamically determined background color
+    fig.update_layout(
+        xaxis_title='Valence (Mood)',
+        yaxis_title='Energy',
+        plot_bgcolor=background_color,
+        paper_bgcolor=background_color
+    )
+
+    fig.show()
+
+    
+def create_song_galaxy(cursor):
+    # Retrieve song data along with titles and artist names
+    cursor.execute("SELECT popularity, valence, energy, title FROM Song")
+    songs = cursor.fetchall()
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 12))
+    ax.set_facecolor('black')  # Set the background to black
+    ax.set_title('Song Galaxy', color='white')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Create a starry effect for the background
+    for i in range(1500):
+        x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+        size = random.uniform(0.1, 1)
+        ax.scatter(x, y, color='white', alpha=random.uniform(0.1, 0.3), s=size)
+
+    # Plot each song with enhanced visual representation
+    for popularity, valence, energy, title in songs:
+        x, y = random.uniform(-1, 1), random.uniform(-1, 1)
+        size = np.sqrt(popularity) * 2  # Adjust size scaling based on popularity
+        color = plt.cm.spring(energy)  # Color based on energy level
+        ax.scatter(x, y, color=color, alpha=0.8, s=size)
+
+        # Show titles for popular songs only to avoid clutter
+        if popularity > 70:  # Threshold for displaying song titles
+            ax.text(x, y, title, color='white', fontsize=8, ha='center', va='center')
+
+    plt.show()
+
+    
 def main():
     # connects to billboard_hot_100 database
     connection = sqlite3.connect("billboard_hot_100.db")
     cursor = connection.cursor()
 
+    # mood map
+    plot_mood_map_interactive(cursor)
+
+    # song galaxy
+    create_song_galaxy(cursor)
+    
     # generate visualizations
     plot_artist_distribution(cursor)
     popularity_valence_visual(cursor)
